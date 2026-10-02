@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -29,10 +28,6 @@ public class FirebaseService {
         gson = new Gson();
     }
 
-    // =========================================================
-    // SIGN UP
-    // =========================================================
-
     public String signUp(String email, String password) throws Exception {
 
         String url =
@@ -53,11 +48,10 @@ public class FirebaseService {
         return "Account created successfully.";
     }
 
-    // =========================================================
-    // SIGN IN
-    // =========================================================
-
-    public String signIn(String email, String password) throws Exception {
+    public String signIn(
+            String email,
+            String password
+    ) throws Exception {
 
         String url =
                 AUTH_BASE
@@ -77,11 +71,9 @@ public class FirebaseService {
         return "Login successful.";
     }
 
-    // =========================================================
-    // PASSWORD RESET
-    // =========================================================
-
-    public String sendPasswordReset(String email) throws Exception {
+    public String sendPasswordReset(
+            String email
+    ) throws Exception {
 
         String url =
                 AUTH_BASE
@@ -90,17 +82,17 @@ public class FirebaseService {
 
         JsonObject body = new JsonObject();
 
-        body.addProperty("requestType", "PASSWORD_RESET");
+        body.addProperty(
+                "requestType",
+                "PASSWORD_RESET"
+        );
+
         body.addProperty("email", email);
 
         post(url, gson.toJson(body));
 
         return "Password reset email sent.";
     }
-
-    // =========================================================
-    // SAVE AUTHENTICATION DATA
-    // =========================================================
 
     private void saveAuthData(String response) {
 
@@ -114,11 +106,10 @@ public class FirebaseService {
         email = getString(json, "email");
     }
 
-    // =========================================================
-    // HTTP POST
-    // =========================================================
-
-    private String post(String url, String jsonBody) throws Exception {
+    private String post(
+            String url,
+            String jsonBody
+    ) throws Exception {
 
         HttpRequest request =
                 HttpRequest.newBuilder()
@@ -128,10 +119,11 @@ public class FirebaseService {
                                 "application/json"
                         )
                         .POST(
-                                HttpRequest.BodyPublishers.ofString(
-                                        jsonBody,
-                                        StandardCharsets.UTF_8
-                                )
+                                HttpRequest.BodyPublishers
+                                        .ofString(
+                                                jsonBody,
+                                                StandardCharsets.UTF_8
+                                        )
                         )
                         .build();
 
@@ -152,11 +144,9 @@ public class FirebaseService {
         );
     }
 
-    // =========================================================
-    // FIREBASE ERROR HANDLING
-    // =========================================================
-
-    private String getFirebaseError(String responseBody) {
+    private String getFirebaseError(
+            String responseBody
+    ) {
 
         try {
 
@@ -171,7 +161,8 @@ public class FirebaseService {
 
                 String message =
                         error.has("message")
-                                ? error.get("message").getAsString()
+                                ? error.get("message")
+                                .getAsString()
                                 : "Unknown Firebase error.";
 
                 switch (message) {
@@ -215,10 +206,6 @@ public class FirebaseService {
         return "Authentication failed.";
     }
 
-    // =========================================================
-    // GETTERS
-    // =========================================================
-
     private String getString(
             JsonObject json,
             String key
@@ -254,10 +241,6 @@ public class FirebaseService {
         return email;
     }
 
-    // =========================================================
-    // REALTIME DATABASE - READ
-    // =========================================================
-
     public String read(String path) throws Exception {
 
         if (!isSignedIn()) {
@@ -267,7 +250,8 @@ public class FirebaseService {
         String cleanPath = path;
 
         if (cleanPath.startsWith("/")) {
-            cleanPath = cleanPath.substring(1);
+            cleanPath =
+                    cleanPath.substring(1);
         }
 
         String url =
@@ -301,10 +285,6 @@ public class FirebaseService {
         );
     }
 
-    // =========================================================
-    // REALTIME DATABASE - WRITE
-    // =========================================================
-
     public String write(
             String path,
             String json
@@ -317,7 +297,8 @@ public class FirebaseService {
         String cleanPath = path;
 
         if (cleanPath.startsWith("/")) {
-            cleanPath = cleanPath.substring(1);
+            cleanPath =
+                    cleanPath.substring(1);
         }
 
         String url =
@@ -335,10 +316,11 @@ public class FirebaseService {
                                 "application/json"
                         )
                         .PUT(
-                                HttpRequest.BodyPublishers.ofString(
-                                        json,
-                                        StandardCharsets.UTF_8
-                                )
+                                HttpRequest.BodyPublishers
+                                        .ofString(
+                                                json,
+                                                StandardCharsets.UTF_8
+                                        )
                         )
                         .build();
 
@@ -360,11 +342,8 @@ public class FirebaseService {
         );
     }
 
-    // =========================================================
-    // REALTIME DATABASE - DELETE
-    // =========================================================
-
-    public void delete(String path) throws Exception {
+    public void delete(String path)
+            throws Exception {
 
         if (!isSignedIn()) {
             throw new Exception("You are not signed in.");
@@ -373,7 +352,8 @@ public class FirebaseService {
         String cleanPath = path;
 
         if (cleanPath.startsWith("/")) {
-            cleanPath = cleanPath.substring(1);
+            cleanPath =
+                    cleanPath.substring(1);
         }
 
         String url =
@@ -404,10 +384,6 @@ public class FirebaseService {
             );
         }
     }
-
-    // =========================================================
-    // LOGOUT
-    // =========================================================
 
     public void logout() {
 

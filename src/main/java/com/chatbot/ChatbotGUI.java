@@ -36,7 +36,6 @@ public class ChatbotGUI extends JFrame {
 
     private static final Color ACCENT = new Color(145, 105, 220);
 
-    // Font color for New Chat / Clear Chat / Export Chat
     private static final Color SIDEBAR_BUTTON_TEXT =
             new Color(210, 210, 220);
 
@@ -46,6 +45,7 @@ public class ChatbotGUI extends JFrame {
 
     private final FirebaseService firebaseService;
     private final GeminiService geminiService;
+    private final DatabaseService databaseService;
 
     // =========================================================
     // UI
@@ -89,13 +89,113 @@ public class ChatbotGUI extends JFrame {
         this.geminiService =
                 new GeminiService();
 
+        this.databaseService =
+                new DatabaseService();
+
         setupLookAndFeel();
         setupWindow();
         buildUI();
 
         showWelcomeMessage();
 
+        saveUserToDatabase();
+
         loadChatHistory();
+    }
+
+    // =========================================================
+    // SAVE USER TO MYSQL
+    // =========================================================
+
+    private void saveUserToDatabase() {
+
+        String uid =
+                firebaseService.getUserId();
+
+        String email =
+                firebaseService.getEmail();
+
+        if (uid == null || uid.isBlank()) {
+            return;
+        }
+
+        if (email == null || email.isBlank()) {
+            email = "unknown";
+        }
+
+        final String finalEmail = email;
+
+        SwingWorker<Void, Void> worker =
+                new SwingWorker<>() {
+
+                    @Override
+                    protected Void doInBackground() {
+
+                        try {
+
+                            databaseService.saveUser(
+                                    uid,
+                                    finalEmail
+                            );
+
+                        } catch (Exception e) {
+
+                            System.out.println(
+                                    "MySQL user save error: "
+                                            + e.getMessage()
+                            );
+                        }
+
+                        return null;
+                    }
+                };
+
+        worker.execute();
+    }
+
+    // =========================================================
+    // SAVE MESSAGE TO MYSQL
+    // =========================================================
+
+    private void saveMessageToDatabase(
+            String role,
+            String message
+    ) {
+
+        String uid =
+                firebaseService.getUserId();
+
+        if (uid == null || uid.isBlank()) {
+            return;
+        }
+
+        SwingWorker<Void, Void> worker =
+                new SwingWorker<>() {
+
+                    @Override
+                    protected Void doInBackground() {
+
+                        try {
+
+                            databaseService.saveMessage(
+                                    uid,
+                                    role,
+                                    message
+                            );
+
+                        } catch (Exception e) {
+
+                            System.out.println(
+                                    "MySQL message save error: "
+                                            + e.getMessage()
+                            );
+                        }
+
+                        return null;
+                    }
+                };
+
+        worker.execute();
     }
 
     // =========================================================
@@ -186,10 +286,6 @@ public class ChatbotGUI extends JFrame {
 
         root.setBackground(BG);
 
-        // -----------------------------------------------------
-        // SIDEBAR
-        // -----------------------------------------------------
-
         JPanel sidebar =
                 createSidebar();
 
@@ -197,10 +293,6 @@ public class ChatbotGUI extends JFrame {
                 sidebar,
                 BorderLayout.WEST
         );
-
-        // -----------------------------------------------------
-        // MAIN AREA
-        // -----------------------------------------------------
 
         JPanel mainPanel =
                 new JPanel(
@@ -216,10 +308,6 @@ public class ChatbotGUI extends JFrame {
                 topBar,
                 BorderLayout.NORTH
         );
-
-        // -----------------------------------------------------
-        // MESSAGES
-        // -----------------------------------------------------
 
         messagesPanel =
                 new JPanel();
@@ -267,10 +355,6 @@ public class ChatbotGUI extends JFrame {
                 BorderLayout.CENTER
         );
 
-        // -----------------------------------------------------
-        // INPUT
-        // -----------------------------------------------------
-
         JPanel inputContainer =
                 createInputArea();
 
@@ -316,10 +400,6 @@ public class ChatbotGUI extends JFrame {
                         BORDER
                 )
         );
-
-        // -----------------------------------------------------
-        // TOP
-        // -----------------------------------------------------
 
         JPanel top =
                 new JPanel();
@@ -392,8 +472,6 @@ public class ChatbotGUI extends JFrame {
                 Box.createVerticalStrut(25)
         );
 
-        // NEW CHAT
-
         JButton newChat =
                 createSidebarButton(
                         "+  New Chat"
@@ -409,8 +487,6 @@ public class ChatbotGUI extends JFrame {
                 Box.createVerticalStrut(8)
         );
 
-        // CLEAR CHAT
-
         JButton clear =
                 createSidebarButton(
                         "Clear Chat"
@@ -425,8 +501,6 @@ public class ChatbotGUI extends JFrame {
         top.add(
                 Box.createVerticalStrut(8)
         );
-
-        // EXPORT CHAT
 
         JButton export =
                 createSidebarButton(
@@ -468,10 +542,6 @@ public class ChatbotGUI extends JFrame {
                 top,
                 BorderLayout.NORTH
         );
-
-        // -----------------------------------------------------
-        // BOTTOM
-        // -----------------------------------------------------
 
         JPanel bottom =
                 new JPanel();
@@ -568,7 +638,6 @@ public class ChatbotGUI extends JFrame {
                 )
         );
 
-        // CHANGED FONT COLOR
         button.setForeground(
                 SIDEBAR_BUTTON_TEXT
         );
@@ -825,14 +894,6 @@ public class ChatbotGUI extends JFrame {
                 new BasicTextAreaUI()
         );
 
-        inputArea.setForeground(TEXT);
-
-        inputArea.setBackground(
-                INPUT_BG
-        );
-
-        inputArea.setCaretColor(TEXT);
-
         inputArea.getInputMap().put(
                 KeyStroke.getKeyStroke(
                         "ENTER"
@@ -977,6 +1038,12 @@ public class ChatbotGUI extends JFrame {
                 userText
         );
 
+        // SAVE USER MESSAGE TO MYSQL
+        saveMessageToDatabase(
+                "user",
+                userText
+        );
+
         thinking = true;
 
         sendButton.setEnabled(false);
@@ -1038,6 +1105,12 @@ public class ChatbotGUI extends JFrame {
                                 response
                         );
 
+                        // SAVE AI RESPONSE TO MYSQL
+                        saveMessageToDatabase(
+                                "assistant",
+                                response
+                        );
+
                         saveChatHistory();
 
                         thinking = false;
@@ -1055,6 +1128,9 @@ public class ChatbotGUI extends JFrame {
                                         130
                                 )
                         );
+
+                        messagesPanel.revalidate();
+                        messagesPanel.repaint();
 
                         scrollToBottom();
                     }
@@ -1311,8 +1387,6 @@ public class ChatbotGUI extends JFrame {
                 foreground
         );
 
-        textArea.setOpaque(true);
-
         int maxWidth = 650;
 
         int minWidth = 120;
@@ -1435,6 +1509,9 @@ public class ChatbotGUI extends JFrame {
 
         messagesPanel.removeAll();
 
+        // CLEAR MYSQL CHAT HISTORY
+        clearDatabaseHistory();
+
         showWelcomeMessage();
 
         saveChatHistory();
@@ -1472,11 +1549,54 @@ public class ChatbotGUI extends JFrame {
 
         messagesPanel.removeAll();
 
+        // CLEAR MYSQL CHAT HISTORY
+        clearDatabaseHistory();
+
         showWelcomeMessage();
 
         saveChatHistory();
 
         scrollToBottom();
+    }
+
+    // =========================================================
+    // CLEAR MYSQL HISTORY
+    // =========================================================
+
+    private void clearDatabaseHistory() {
+
+        String uid =
+                firebaseService.getUserId();
+
+        if (uid == null || uid.isBlank()) {
+            return;
+        }
+
+        SwingWorker<Void, Void> worker =
+                new SwingWorker<>() {
+
+                    @Override
+                    protected Void doInBackground() {
+
+                        try {
+
+                            databaseService.clearUserChats(
+                                    uid
+                            );
+
+                        } catch (Exception e) {
+
+                            System.out.println(
+                                    "MySQL clear error: "
+                                            + e.getMessage()
+                            );
+                        }
+
+                        return null;
+                    }
+                };
+
+        worker.execute();
     }
 
     // =========================================================
@@ -1590,7 +1710,7 @@ public class ChatbotGUI extends JFrame {
     }
 
     // =========================================================
-    // SAVE CHAT HISTORY
+    // SAVE FIREBASE CHAT HISTORY
     // =========================================================
 
     private void saveChatHistory() {
@@ -1650,7 +1770,7 @@ public class ChatbotGUI extends JFrame {
     }
 
     // =========================================================
-    // LOAD CHAT HISTORY
+    // LOAD FIREBASE CHAT HISTORY
     // =========================================================
 
     private void loadChatHistory() {
@@ -1810,6 +1930,8 @@ public class ChatbotGUI extends JFrame {
         }
 
         firebaseService.logout();
+
+        databaseService.close();
 
         dispose();
 

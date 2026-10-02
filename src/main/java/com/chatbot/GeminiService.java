@@ -27,7 +27,6 @@ public class GeminiService {
             String text = response.text();
 
             if (text == null || text.isBlank()) {
-
                 return "I didn't receive a response from Gemini.";
             }
 
