@@ -55,12 +55,12 @@ java-chatbot/
 
 ### Login & Sign Up
 
-![Login Screen](screenshots/login.png)
+![Login Screen](screenshots/login.png.png)
 
 ### AI Chatbot
 
-![Chatbot Screen](screenshots/chatbot.png)
+![Chatbot Screen](screenshots/chatbot.png.png)
 
 ### Application
 
-![Application Screenshot](screenshots/screenshot3.png)
+![Application Screenshot](screenshots/screenshot3.png.png)
