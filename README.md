@@ -51,3 +51,16 @@ java-chatbot/
                     ├── FirebaseConfig.java
                     ├── FirebaseService.java
                     └── GeminiService.java
+## Screenshots
+
+### Login & Sign Up
+
+![Login Screen](screenshots/login.png)
+
+### AI Chatbot
+
+![Chatbot Screen](screenshots/chatbot.png)
+
+### Application
+
+![Application Screenshot](screenshots/screenshot3.png)
